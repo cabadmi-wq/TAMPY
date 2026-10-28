@@ -1,5 +1,5 @@
 # ==============================================
-# 🤖 TAMPY - Asistente Inteligente - Versión Final
+# 🤖 TAMPY - Asistente Inteligente - Versión Corregida
 # ==============================================
 
 from flask import Flask, render_template_string, request, jsonify
@@ -7,8 +7,8 @@ import requests
 
 app = Flask(__name__)
 
-# 🔑 Configuración
-HF_API_URL = “https://api-inference.huggingface.co/models/gpt2”
+# 🔑 Configuración - ¡Usa comillas normales!
+HF_API_URL = "https://api-inference.huggingface.co/models/gpt2"
 HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
@@ -23,20 +23,21 @@ historial = [
 def consultar_ia(mensaje_nuevo):
     historial.append({"role": "user", "content": mensaje_nuevo})
     
+    # Construir el texto del mensaje
     prompt = ""
     for msg in historial:
         if msg["role"] == "system":
-            prompt += f"<|system|>\n{msg['content']}\n"
+            prompt += msg["content"] + "\n\n"
         elif msg["role"] == "user":
-            prompt += f"<|user|>\n{msg['content']}\n"
+            prompt += "Usuario: " + msg["content"] + "\n"
         else:
-            prompt += f"<|assistant|>\n{msg['content']}\n"
-    prompt += "<|assistant|>\n"
+            prompt += "TAMPY: " + msg["content"] + "\n"
+    prompt += "TAMPY:"
     
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 500,
+            "max_new_tokens": 100,
             "temperature": 0.7,
             "return_full_text": False
         }
@@ -48,9 +49,11 @@ def consultar_ia(mensaje_nuevo):
         resultado = respuesta.json()
         if isinstance(resultado, list) and len(resultado) > 0:
             texto = resultado[0].get('generated_text', '').strip()
+            if "Usuario:" in texto:
+                texto = texto.split("Usuario:")[0].strip()
             historial.append({"role": "assistant", "content": texto})
             return texto
-        return "No recibí respuesta del modelo."
+        return "No recibí respuesta."
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
 
