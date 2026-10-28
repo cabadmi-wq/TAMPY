@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # 🔑 Token de Hugging Face
 HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct"
-HF_API_TOKEN = "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"
+HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 # 🧠 Historial de conversación
