@@ -1,9 +1,5 @@
 # ==============================================
-# 🤖 TAMPY - Asistente Inteligente Completo
-# ✅ Lee archivos de texto
-# ✅ Analiza imágenes
-# ✅ Memoria de conversación
-# ✅ Diseño profesional oscuro / azul celeste
+# 🤖 TAMPY - Asistente Inteligente
 # ==============================================
 
 from flask import Flask, render_template_string, request, jsonify
@@ -12,18 +8,16 @@ import base64
 
 app = Flask(__name__)
 
-# 🔑 Tu token de Hugging Face
+# 🔑 Token de Hugging Face
 HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct"
-HF_VISION_URL = "https://api-inference.huggingface.co/models/microsoft/phi-4-vision-instruct"
 HF_API_TOKEN = "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"
-
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
-# 🧠 Memoria de conversación
+# 🧠 Historial de conversación
 historial = [
     {
         "role": "system",
-        "content": "Eres TAMPY, una asistente amable, profesional y servicial. Respondes en español de forma clara y útil. Puedes leer archivos, analizar imágenes y ayudar con cualquier consulta."
+        "content": "Eres TAMPY, una asistente amable y servicial. Respondes siempre en español de forma clara y útil."
     }
 ]
 
@@ -43,56 +37,28 @@ def consultar_ia(mensaje_nuevo):
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 800,
+            "max_new_tokens": 600,
             "temperature": 0.7,
-            "top_p": 0.9,
             "return_full_text": False
         }
     }
     
     try:
-        respuesta = requests.post(HF_API_URL, headers=headers, json=payload, timeout=90)
+        respuesta = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
         respuesta.raise_for_status()
         resultado = respuesta.json()
         if isinstance(resultado, list) and len(resultado) > 0:
             texto = resultado[0].get('generated_text', '').strip()
             historial.append({"role": "assistant", "content": texto})
             return texto
-        return "No entendí eso, intenta de nuevo."
+        return "No recibí respuesta del modelo."
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
 
-def analizar_imagen(datos_base64, consulta="Describe esta imagen"):
-    try:
-        imagen_decodificada = base64.b64decode(datos_base64)
-        payload = {
-            "inputs": [
-                {
-                    "image": imagen_decodificada,
-                    "prompt": consulta
-                }
-            ],
-            "parameters": {"max_new_tokens": 400}
-        }
-        respuesta = requests.post(HF_VISION_URL, headers=headers, json=payload, timeout=120)
-        respuesta.raise_for_status()
-        resultado = respuesta.json()
-        if isinstance(resultado, list) and len(resultado) > 0:
-            return resultado[0].get('generated_text', 'Análisis completado.')
-        return "Imagen recibida correctamente."
-    except Exception as e:
-        return f"✅ Imagen cargada. (Análisis: {str(e)})"
-
-def leer_archivo(contenido, nombre):
-    try:
-        if len(contenido) > 8000:
-            contenido = contenido[:8000] + "\n... [contenido recortado]"
-        return f"📄 Contenido de {nombre}:\n\n{contenido}"
-    except Exception as e:
-        return f"⚠️ No pude leer el archivo: {str(e)}"
-
-# 🌐 INTERFAZ WEB
-HTML = """
+# 🌐 PÁGINA PRINCIPAL
+@app.route('/')
+def index():
+    return render_template_string("""
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -100,333 +66,189 @@ HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🤖 TAMPY - Asistente Inteligente</title>
     <style>
-        :root {
-            --bg-main: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --accent: #38bdf8;
-            --accent-dark: #0ea5e9;
-            --accent-light: #7dd3fc;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-            --user-bubble: #0369a1;
-            --tampy-bubble: #1e293b;
-            --border: #475569;
-        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body {
-            background: linear-gradient(135deg, var(--bg-main) 0%, #1a2744 100%);
-            color: var(--text);
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f1f5f9;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
         header {
-            background: linear-gradient(90deg, var(--accent-dark), var(--accent));
-            padding: 18px 24px;
-            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
         }
-        .header-content {
-            max-width: 800px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .logo-section { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { font-size: 28px; }
-        h1 { font-size: 22px; font-weight: 700; color: white; }
-        .status {
-            font-size: 13px;
-            color: rgba(255,255,255,0.9);
-            background: rgba(0,0,0,0.15);
-            padding: 6px 12px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #86efac;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-        .toolbar {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 24px;
-        }
-        .toolbar-content {
-            max-width: 800px;
-            margin: 0 auto;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .btn-tool {
-            background: var(--bg-tertiary);
-            color: var(--text);
-            border: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-        .btn-tool:hover { background: var(--accent-dark); transform: translateY(-1px); }
-        .file-input { display: none; }
-        .file-name { font-size: 13px; color: var(--accent-light); margin-left: 8px; }
-        .chat-container {
+        header h1 { font-size: 24px; }
+        .chat {
             flex: 1;
-            max-width: 800px;
+            max-width: 700px;
             width: 100%;
             margin: 0 auto;
-            padding: 24px;
-            padding-bottom: 120px;
+            padding: 20px;
+            padding-bottom: 100px;
             overflow-y: auto;
         }
-        .msg { margin-bottom: 24px; animation: slideIn 0.3s ease; display: flex; }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(12px); }
+        .mensaje { margin-bottom: 20px; animation: aparecer 0.3s ease; }
+        @keyframes aparecer {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .tu { justify-content: flex-end; }
-        .tampy { justify-content: flex-start; }
-        .bubble {
-            max-width: 85%;
+        .usuario { text-align: right; }
+        .tampy { text-align: left; }
+        .burbuja {
+            display: inline-block;
             padding: 14px 18px;
-            border-radius: 16px;
+            border-radius: 18px;
+            max-width: 85%;
             line-height: 1.6;
-            font-size: 15px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
         }
-        .tu .bubble {
-            background: linear-gradient(135deg, var(--user-bubble), #0284c7);
+        .usuario .burbuja {
+            background: #0369a1;
             border-bottom-right-radius: 4px;
-            box-shadow: 0 2px 10px rgba(14, 165, 233, 0.2);
         }
-        .tampy .bubble {
-            background: var(--tampy-bubble);
-            border: 1px solid var(--border);
+        .tampy .burbuja {
+            background: #334155;
             border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .input-area {
+        .entrada {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-            padding: 16px 24px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            background: #1e293b;
+            border-top: 1px solid #475569;
+            padding: 15px 20px;
         }
-        .input-wrap {
-            max-width: 800px;
+        .fila-entrada {
+            max-width: 700px;
             margin: 0 auto;
             display: flex;
-            gap: 12px;
-            align-items: flex-end;
+            gap: 10px;
         }
         textarea {
             flex: 1;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border);
+            background: #334155;
+            border: 1px solid #475569;
             border-radius: 12px;
-            padding: 14px 16px;
-            color: var(--text);
+            padding: 12px 15px;
+            color: white;
             font-size: 15px;
             resize: none;
-            height: 52px;
-            max-height: 140px;
+            height: 50px;
         }
-        textarea:focus { outline: none; border-color: var(--accent); }
-        .btn-send {
-            background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+        textarea:focus { outline: none; border-color: #38bdf8; }
+        button {
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
             color: white;
             border: none;
             border-radius: 12px;
-            padding: 14px 28px;
+            padding: 0 25px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            height: 52px;
+            height: 50px;
         }
-        .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
-        .pensando {
-            color: var(--accent-light);
-            font-size: 14px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        @media (max-width: 640px) {
-            header { padding: 14px 16px; }
-            .chat-container { padding: 16px; padding-bottom: 100px; }
-            .input-area { padding: 12px 16px; }
-        }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .escribiendo { color: #7dd3fc; font-size: 14px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <header>
-        <div class="header-content">
-            <div class="logo-section">
-                <span class="logo-icon">🤖</span>
-                <h1>TAMPY</h1>
-            </div>
-            <div class="status">
-                <span class="status-dot"></span>
-                <span>En línea</span>
-            </div>
-        </div>
+        <h1>🤖 TAMPY - Tu Asistente Inteligente</h1>
     </header>
     
-    <div class="toolbar">
-        <div class="toolbar-content">
-            <label class="btn-tool" for="file-input">📄 Subir archivo</label>
-            <label class="btn-tool" for="image-input">🖼️ Subir imagen</label>
-            <span class="file-name" id="file-info"></span>
-            <div style="flex:1;"></div>
-            <button class="btn-tool" onclick="reiniciarChat()">🔄 Nueva conversación</button>
+    <div class="chat" id="chat">
+        <div class="mensaje tampy">
+            <div class="burbuja">¡Hola! Soy TAMPY 🤖<br>¿En qué puedo ayudarte hoy?</div>
         </div>
-        <input type="file" id="file-input" class="file-input" accept=".txt,.py,.md,.csv,.json">
-        <input type="file" id="image-input" class="file-input" accept="image/*">
     </div>
     
-    <div class="chat-container" id="chat">
-        <div class="msg tampy">
-            <div class="bubble">¡Hola! Soy <strong>TAMPY</strong> 🤖
-            
-Puedo ayudarte con:
-💬 Preguntas y respuestas
-📄 Leer archivos de texto
-🖼️ Analizar imágenes
-💻 Explicar y escribir código
+    <div class="entrada">
+        <div class="fila-entrada">
+            <textarea id="texto" placeholder="Escribe tu mensaje..." onkeydown="teclaEnter(event)"></textarea>
+            <button id="btn-enviar" onclick="enviar()">Enviar</button>
+        </div>
+    </div>
 
-¡Sube un archivo o pregúntame lo que necesitas!</div>
-        </div>
-    </div>
-    
-    <div class="input-area">
-        <div class="input-wrap">
-            <textarea id="mensaje" placeholder="Escribe tu mensaje..." onkeydown="handleKey(event)"></textarea>
-            <button class="btn-send" id="btn" onclick="enviarMensaje()">Enviar</button>
-        </div>
-    </div>
-    
 <script>
 const chat = document.getElementById('chat');
-const mensaje = document.getElementById('mensaje');
-const btn = document.getElementById('btn');
-const fileInput = document.getElementById('file-input');
-const imageInput = document.getElementById('image-input');
-const fileInfo = document.getElementById('file-info');
+const texto = document.getElementById('texto');
+const btn = document.getElementById('btn-enviar');
 
-let archivoParaEnviar = null;
-let imagenParaEnviar = null;
-
-function handleKey(e) {
+function teclaEnter(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        enviarMensaje();
+        enviar();
     }
 }
 
-fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    fileInfo.textContent = `📄 ${file.name}`;
-    const lector = new FileReader();
-    lector.onload = function(evento) {
-        archivoParaEnviar = {
-            nombre: file.name,
-            contenido: evento.target.result
-        };
-    };
-    lector.readAsText(file);
-});
-
-imageInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    fileInfo.textContent = `🖼️ ${file.name}`;
-    const lector = new FileReader();
-    lector.onload = function(evento) {
-        imagenParaEnviar = {
-            nombre: file.name,
-            contenido: evento.target.result.split(',')[1]
-        };
-    };
-    lector.readAsDataURL(file);
-});
-
-function agregarMensaje(quien, texto) {
+function agregarMensaje(quien, contenido) {
     const div = document.createElement('div');
-    div.className = `msg ${quien}`;
-    div.innerHTML = `<div class="bubble">${texto.replace(/\\n/g, '<br>')}</div>`;
+    div.className = `mensaje ${quien}`;
+    div.innerHTML = `<div class="burbuja">${contenido.replace(/\\n/g, '<br>')}</div>`;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
 }
 
-async function enviarMensaje() {
-    const texto = mensaje.value.trim();
-    if (!texto && !archivoParaEnviar && !imagenParaEnviar) return;
+async function enviar() {
+    const mensaje = texto.value.trim();
+    if (!mensaje) return;
     
-    let textoEnviar = texto;
-    if (archivoParaEnviar) {
-        textoEnviar = `Archivo: ${archivoParaEnviar.nombre}\\n\\n${archivoParaEnviar.contenido.substring(0, 3000)}`;
-        archivoParaEnviar = null;
-        fileInfo.textContent = '';
-    }
-    if (imagenParaEnviar) {
-        textoEnviar = texto || 'Describe esta imagen';
-        imagenParaEnviar = null;
-        fileInfo.textContent = '';
-    }
-    
-    agregarMensaje('tu', textoEnviar);
-    mensaje.value = '';
+    agregarMensaje('usuario', mensaje);
+    texto.value = '';
     btn.disabled = true;
     btn.textContent = '...';
     
-    const pensando = document.createElement('div');
-    pensando.className = 'pensando';
-    pensando.innerHTML = '🤖 TAMPY está pensando...';
-    chat.appendChild(pensando);
+    const escribiendo = document.createElement('div');
+    escribiendo.className = 'escribiendo';
+    escribiendo.textContent = '🤖 TAMPY está pensando...';
+    chat.appendChild(escribiendo);
     chat.scrollTop = chat.scrollHeight;
     
     try {
         const respuesta = await fetch('/preguntar', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({pregunta: textoEnviar})
+            body: JSON.stringify({ pregunta: mensaje })
         });
         const datos = await respuesta.json();
-        pensando.remove();
-        agregarMensaje('tampy', datos.respuesta || 'Sin respuesta');
+        escribiendo.remove();
+        agregarMensaje('tampy', datos.respuesta || 'No obtuve respuesta.');
     } catch (error) {
-        pensando.remove();
+        escribiendo.remove();
         agregarMensaje('tampy', '⚠️ Error de conexión. Intenta de nuevo.');
     }
     
     btn.disabled = false;
     btn.textContent = 'Enviar';
-    mensaje.focus();
+    texto.focus();
 }
+</script>
+</body>
+</html>
+    """)
 
-async function reiniciarChat() {
-    if (confirm('¿Empezar conversación nueva?')) {
-        await fetch('/reiniciar', {method: 'POST'});
-        chat.innerHTML = '<div class
+# 📨 Ruta para recibir preguntas
+@app.route('/preguntar', methods=['POST'])
+def preguntar():
+    datos = request.get_json()
+    pregunta = datos.get('pregunta', '')
+    respuesta = consultar_ia(pregunta)
+    return jsonify({"respuesta": respuesta})
+
+# 🔄 Reiniciar conversación
+@app.route('/reiniciar', methods=['POST'])
+def reiniciar():
+    global historial
+    historial = [
+        {
+            "role": "system",
+            "content": "Eres TAMPY, una asistente amable y servicial. Respondes siempre en español de forma clara y útil."
+        }
+    ]
+    return jsonify({"mensaje": "Conversación reiniciada"})
+
+if __name__ == '__main__':
+    app.run(debug=False)
