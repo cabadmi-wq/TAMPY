@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # 🔑 Configuración
 HF_API_URL = "https://api-inference.huggingface.com/models/HuggingFaceH4/zephyr-7b-beta"
-HF_API_TOKEN = "PON_AQUI_TU_TOKEN_NUEVO_COMPLETO"
+HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 # 🧠 Historial de conversación
