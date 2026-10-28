@@ -1,16 +1,15 @@
 # ==============================================
-# 🤖 TAMPY - Asistente Inteligente
+# 🤖 TAMPY - Asistente Inteligente - Versión Final
 # ==============================================
 
 from flask import Flask, render_template_string, request, jsonify
 import requests
-import base64
 
 app = Flask(__name__)
 
-# 🔑 Token de Hugging Face
-HF_API_URL = "HF_API_URL = "https://api-inference.huggingface.com/models/HuggingFaceH4/zephyr-7b-beta""
-HF_API_TOKEN = "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"
+# 🔑 Configuración
+HF_API_URL = "https://api-inference.huggingface.com/models/HuggingFaceH4/zephyr-7b-beta"
+HF_API_TOKEN = "PON_AQUI_TU_TOKEN_NUEVO_COMPLETO"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 # 🧠 Historial de conversación
@@ -27,17 +26,17 @@ def consultar_ia(mensaje_nuevo):
     prompt = ""
     for msg in historial:
         if msg["role"] == "system":
-            prompt += f"<<SYS>>\n{msg['content']}\n<</SYS>>\n\n"
+            prompt += f"<|system|>\n{msg['content']}\n"
         elif msg["role"] == "user":
-            prompt += f"Usuario: {msg['content']}\n"
+            prompt += f"<|user|>\n{msg['content']}\n"
         else:
-            prompt += f"TAMPY: {msg['content']}\n"
-    prompt += "TAMPY:"
+            prompt += f"<|assistant|>\n{msg['content']}\n"
+    prompt += "<|assistant|>\n"
     
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 600,
+            "max_new_tokens": 500,
             "temperature": 0.7,
             "return_full_text": False
         }
@@ -55,7 +54,7 @@ def consultar_ia(mensaje_nuevo):
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
 
-# 🌐 PÁGINA PRINCIPAL
+# 🌐 INTERFAZ WEB
 @app.route('/')
 def index():
     return render_template_string("""
@@ -64,7 +63,7 @@ def index():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🤖 TAMPY - Asistente Inteligente</title>
+    <title>🤖 TAMPY - Tu Asistente Inteligente</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body {
@@ -78,7 +77,6 @@ def index():
             background: linear-gradient(90deg, #0284c7, #38bdf8);
             padding: 20px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
         }
         header h1 { font-size: 24px; }
         .chat {
@@ -88,7 +86,6 @@ def index():
             margin: 0 auto;
             padding: 20px;
             padding-bottom: 100px;
-            overflow-y: auto;
         }
         .mensaje { margin-bottom: 20px; animation: aparecer 0.3s ease; }
         @keyframes aparecer {
@@ -237,18 +234,6 @@ def preguntar():
     pregunta = datos.get('pregunta', '')
     respuesta = consultar_ia(pregunta)
     return jsonify({"respuesta": respuesta})
-
-# 🔄 Reiniciar conversación
-@app.route('/reiniciar', methods=['POST'])
-def reiniciar():
-    global historial
-    historial = [
-        {
-            "role": "system",
-            "content": "Eres TAMPY, una asistente amable y servicial. Respondes siempre en español de forma clara y útil."
-        }
-    ]
-    return jsonify({"mensaje": "Conversación reiniciada"})
 
 if __name__ == '__main__':
     app.run(debug=False)
