@@ -9,7 +9,7 @@ import base64
 app = Flask(__name__)
 
 # 🔑 Token de Hugging Face
-HF_API_URL = "https://api-inference.huggingface.com/models/TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+HF_API_URL = "HF_API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta""
 HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
