@@ -8,7 +8,7 @@ import requests
 app = Flask(__name__)
 
 # 🔑 Configuración
-HF_API_URL = "https://api-inference.huggingface.com/models/HuggingFaceH4/zephyr-7b-beta"
+HF_API_URL = “https://api-inference.huggingface.co/models/gpt2”
 HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
