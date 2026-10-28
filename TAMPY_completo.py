@@ -12,10 +12,10 @@ import base64
 
 app = Flask(__name__)
 
-# 🔑 Configuración de Hugging Face
+# 🔑 Tu token de Hugging Face
 HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-3B-Instruct"
 HF_VISION_URL = "https://api-inference.huggingface.co/models/microsoft/phi-4-vision-instruct"
-HF_API_TOKEN = "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"  # ← Pon tu token aquí
+HF_API_TOKEN = "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"
 
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
@@ -43,7 +43,7 @@ def consultar_ia(mensaje_nuevo):
     payload = {
         "inputs": prompt,
         "parameters": {
-            "max_new_tokens": 1000,
+            "max_new_tokens": 800,
             "temperature": 0.7,
             "top_p": 0.9,
             "return_full_text": False
@@ -62,33 +62,32 @@ def consultar_ia(mensaje_nuevo):
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
 
-def analizar_imagen(datos_imagen, consulta="Describe esta imagen"):
+def analizar_imagen(datos_base64, consulta="Describe esta imagen"):
     try:
+        imagen_decodificada = base64.b64decode(datos_base64)
         payload = {
             "inputs": [
                 {
-                    "image": datos_imagen,
+                    "image": imagen_decodificada,
                     "prompt": consulta
                 }
             ],
-            "parameters": {"max_new_tokens": 500}
+            "parameters": {"max_new_tokens": 400}
         }
         respuesta = requests.post(HF_VISION_URL, headers=headers, json=payload, timeout=120)
         respuesta.raise_for_status()
         resultado = respuesta.json()
         if isinstance(resultado, list) and len(resultado) > 0:
-            return resultado[0].get('generated_text', 'No pude analizar la imagen.')
+            return resultado[0].get('generated_text', 'Análisis completado.')
         return "Imagen recibida correctamente."
     except Exception as e:
         return f"✅ Imagen cargada. (Análisis: {str(e)})"
 
 def leer_archivo(contenido, nombre):
     try:
-        if nombre.endswith('.txt') or nombre.endswith('.py') or nombre.endswith('.md') or nombre.endswith('.csv'):
-            if len(contenido) > 8000:
-                contenido = contenido[:8000] + "\n... [contenido recortado por longitud]"
-            return f"📄 Contenido de {nombre}:\n\n{contenido}"
-        return f"✅ Archivo '{nombre}' recibido. Tipo de archivo no soportado para lectura directa."
+        if len(contenido) > 8000:
+            contenido = contenido[:8000] + "\n... [contenido recortado]"
+        return f"📄 Contenido de {nombre}:\n\n{contenido}"
     except Exception as e:
         return f"⚠️ No pude leer el archivo: {str(e)}"
 
@@ -114,14 +113,7 @@ HTML = """
             --tampy-bubble: #1e293b;
             --border: #475569;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Inter', sans-serif;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body {
             background: linear-gradient(135deg, var(--bg-main) 0%, #1a2744 100%);
             color: var(--text);
@@ -129,14 +121,11 @@ HTML = """
             display: flex;
             flex-direction: column;
         }
-        
-        /* === CABECERA === */
         header {
             background: linear-gradient(90deg, var(--accent-dark), var(--accent));
             padding: 18px 24px;
             box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
         }
-        
         .header-content {
             max-width: 800px;
             margin: 0 auto;
@@ -144,24 +133,9 @@ HTML = """
             align-items: center;
             justify-content: space-between;
         }
-        
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            font-size: 28px;
-        }
-        
-        h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: white;
-            letter-spacing: 0.5px;
-        }
-        
+        .logo-section { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { font-size: 28px; }
+        h1 { font-size: 22px; font-weight: 700; color: white; }
         .status {
             font-size: 13px;
             color: rgba(255,255,255,0.9);
@@ -172,7 +146,6 @@ HTML = """
             align-items: center;
             gap: 6px;
         }
-        
         .status-dot {
             width: 8px;
             height: 8px;
@@ -180,19 +153,15 @@ HTML = """
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
-        
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(1.2); }
         }
-        
-        /* === BARRA DE HERRAMIENTAS === */
         .toolbar {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             padding: 10px 24px;
         }
-        
         .toolbar-content {
             max-width: 800px;
             margin: 0 auto;
@@ -201,7 +170,6 @@ HTML = """
             gap: 10px;
             align-items: center;
         }
-        
         .btn-tool {
             background: var(--bg-tertiary);
             color: var(--text);
@@ -215,28 +183,9 @@ HTML = """
             gap: 6px;
             transition: all 0.2s ease;
         }
-        
-        .btn-tool:hover {
-            background: var(--accent-dark);
-            transform: translateY(-1px);
-        }
-        
-        .btn-tool.primary {
-            background: var(--accent);
-            color: white;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-name {
-            font-size: 13px;
-            color: var(--accent-light);
-            margin-left: 8px;
-        }
-        
-        /* === ÁREA DE CHAT === */
+        .btn-tool:hover { background: var(--accent-dark); transform: translateY(-1px); }
+        .file-input { display: none; }
+        .file-name { font-size: 13px; color: var(--accent-light); margin-left: 8px; }
         .chat-container {
             flex: 1;
             max-width: 800px;
@@ -246,26 +195,13 @@ HTML = """
             padding-bottom: 120px;
             overflow-y: auto;
         }
-        
-        .msg {
-            margin-bottom: 24px;
-            animation: slideIn 0.3s ease;
-            display: flex;
-        }
-        
+        .msg { margin-bottom: 24px; animation: slideIn 0.3s ease; display: flex; }
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
-        .tu {
-            justify-content: flex-end;
-        }
-        
-        .tampy {
-            justify-content: flex-start;
-        }
-        
+        .tu { justify-content: flex-end; }
+        .tampy { justify-content: flex-start; }
         .bubble {
             max-width: 85%;
             padding: 14px 18px;
@@ -275,38 +211,17 @@ HTML = """
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
         .tu .bubble {
             background: linear-gradient(135deg, var(--user-bubble), #0284c7);
             border-bottom-right-radius: 4px;
             box-shadow: 0 2px 10px rgba(14, 165, 233, 0.2);
         }
-        
         .tampy .bubble {
             background: var(--tampy-bubble);
             border: 1px solid var(--border);
             border-bottom-left-radius: 4px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        
-        .bubble img {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 8px;
-        }
-        
-        .file-preview {
-            background: var(--bg-tertiary);
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-        
-        /* === ÁREA DE ESCRITURA === */
         .input-area {
             position: fixed;
             bottom: 0;
@@ -317,7 +232,6 @@ HTML = """
             padding: 16px 24px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
         }
-        
         .input-wrap {
             max-width: 800px;
             margin: 0 auto;
@@ -325,14 +239,8 @@ HTML = """
             gap: 12px;
             align-items: flex-end;
         }
-        
-        .input-left {
-            flex: 1;
-            position: relative;
-        }
-        
         textarea {
-            width: 100%;
+            flex: 1;
             background: var(--bg-tertiary);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -342,14 +250,8 @@ HTML = """
             resize: none;
             height: 52px;
             max-height: 140px;
-            transition: border 0.2s ease;
         }
-        
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
+        textarea:focus { outline: none; border-color: var(--accent); }
         .btn-send {
             background: linear-gradient(135deg, var(--accent-dark), var(--accent));
             color: white;
@@ -360,20 +262,8 @@ HTML = """
             font-weight: 600;
             cursor: pointer;
             height: 52px;
-            transition: all 0.2s ease;
         }
-        
-        .btn-send:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-        }
-        
-        .btn-send:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
+        .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
         .pensando {
             color: var(--accent-light);
             font-size: 14px;
@@ -382,37 +272,19 @@ HTML = """
             align-items: center;
             gap: 8px;
         }
-        
-        .typing-dots span {
-            animation: blink 1.4s infinite both;
-        }
-        
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes blink {
-            0%, 80%, 100% { opacity: 0; }
-            40% { opacity: 1; }
-        }
-        
-        /* Responsivo */
         @media (max-width: 640px) {
             header { padding: 14px 16px; }
             .chat-container { padding: 16px; padding-bottom: 100px; }
             .input-area { padding: 12px 16px; }
-            .btn-send { padding: 14px 20px; }
         }
     </style>
 </head>
 <body>
-    <!-- CABECERA -->
     <header>
         <div class="header-content">
             <div class="logo-section">
                 <span class="logo-icon">🤖</span>
-                <div>
-                    <h1>TAMPY</h1>
-                </div>
+                <h1>TAMPY</h1>
             </div>
             <div class="status">
                 <span class="status-dot"></span>
@@ -421,51 +293,36 @@ HTML = """
         </div>
     </header>
     
-    <!-- BARRA DE HERRAMIENTAS -->
     <div class="toolbar">
         <div class="toolbar-content">
-            <label class="btn-tool" for="file-input">
-                📄 Subir archivo
-            </label>
-            <label class="btn-tool" for="image-input">
-                🖼️ Subir imagen
-            </label>
+            <label class="btn-tool" for="file-input">📄 Subir archivo</label>
+            <label class="btn-tool" for="image-input">🖼️ Subir imagen</label>
             <span class="file-name" id="file-info"></span>
             <div style="flex:1;"></div>
-            <button class="btn-tool" onclick="reiniciarChat()">
-                🔄 Nueva conversación
-            </button>
+            <button class="btn-tool" onclick="reiniciarChat()">🔄 Nueva conversación</button>
         </div>
         <input type="file" id="file-input" class="file-input" accept=".txt,.py,.md,.csv,.json">
         <input type="file" id="image-input" class="file-input" accept="image/*">
     </div>
     
-    <!-- ÁREA DE CHAT -->
     <div class="chat-container" id="chat">
         <div class="msg tampy">
-            <div class="bubble">¡Hola! Soy <strong>TAMPY</strong> 🤖<br><br>
+            <div class="bubble">¡Hola! Soy <strong>TAMPY</strong> 🤖
+            
 Puedo ayudarte con:
 💬 Preguntas y respuestas
-📄 Leer archivos de texto (.txt, .py, .csv, etc.)
+📄 Leer archivos de texto
 🖼️ Analizar imágenes
-💻 Explicar y escribir código<br><br>
-¡Sube un archivo o imagen, o simplemente pregúntame lo que necesitas!</div>
+💻 Explicar y escribir código
+
+¡Sube un archivo o pregúntame lo que necesitas!</div>
         </div>
     </div>
     
-    <!-- ÁREA DE ENTRADA -->
     <div class="input-area">
         <div class="input-wrap">
-            <div class="input-left">
-                <textarea 
-                    id="mensaje" 
-                    placeholder="Escribe tu mensaje... Enter = enviar | Shift+Enter = nueva línea"
-                    onkeydown="handleKey(event)"
-                ></textarea>
-            </div>
-            <button class="btn-send" id="btn" onclick="enviarMensaje()">
-                Enviar →
-            </button>
+            <textarea id="mensaje" placeholder="Escribe tu mensaje..." onkeydown="handleKey(event)"></textarea>
+            <button class="btn-send" id="btn" onclick="enviarMensaje()">Enviar</button>
         </div>
     </div>
     
@@ -477,10 +334,9 @@ const fileInput = document.getElementById('file-input');
 const imageInput = document.getElementById('image-input');
 const fileInfo = document.getElementById('file-info');
 
-let archivoPendiente = null;
-let imagenPendiente = null;
+let archivoParaEnviar = null;
+let imagenParaEnviar = null;
 
-// === Manejo de teclado ===
 function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -488,12 +344,89 @@ function handleKey(e) {
     }
 }
 
-// === Subir archivo ===
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     fileInfo.textContent = `📄 ${file.name}`;
-    
     const lector = new FileReader();
-    le
+    lector.onload = function(evento) {
+        archivoParaEnviar = {
+            nombre: file.name,
+            contenido: evento.target.result
+        };
+    };
+    lector.readAsText(file);
+});
+
+imageInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    fileInfo.textContent = `🖼️ ${file.name}`;
+    const lector = new FileReader();
+    lector.onload = function(evento) {
+        imagenParaEnviar = {
+            nombre: file.name,
+            contenido: evento.target.result.split(',')[1]
+        };
+    };
+    lector.readAsDataURL(file);
+});
+
+function agregarMensaje(quien, texto) {
+    const div = document.createElement('div');
+    div.className = `msg ${quien}`;
+    div.innerHTML = `<div class="bubble">${texto.replace(/\\n/g, '<br>')}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+async function enviarMensaje() {
+    const texto = mensaje.value.trim();
+    if (!texto && !archivoParaEnviar && !imagenParaEnviar) return;
+    
+    let textoEnviar = texto;
+    if (archivoParaEnviar) {
+        textoEnviar = `Archivo: ${archivoParaEnviar.nombre}\\n\\n${archivoParaEnviar.contenido.substring(0, 3000)}`;
+        archivoParaEnviar = null;
+        fileInfo.textContent = '';
+    }
+    if (imagenParaEnviar) {
+        textoEnviar = texto || 'Describe esta imagen';
+        imagenParaEnviar = null;
+        fileInfo.textContent = '';
+    }
+    
+    agregarMensaje('tu', textoEnviar);
+    mensaje.value = '';
+    btn.disabled = true;
+    btn.textContent = '...';
+    
+    const pensando = document.createElement('div');
+    pensando.className = 'pensando';
+    pensando.innerHTML = '🤖 TAMPY está pensando...';
+    chat.appendChild(pensando);
+    chat.scrollTop = chat.scrollHeight;
+    
+    try {
+        const respuesta = await fetch('/preguntar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({pregunta: textoEnviar})
+        });
+        const datos = await respuesta.json();
+        pensando.remove();
+        agregarMensaje('tampy', datos.respuesta || 'Sin respuesta');
+    } catch (error) {
+        pensando.remove();
+        agregarMensaje('tampy', '⚠️ Error de conexión. Intenta de nuevo.');
+    }
+    
+    btn.disabled = false;
+    btn.textContent = 'Enviar';
+    mensaje.focus();
+}
+
+async function reiniciarChat() {
+    if (confirm('¿Empezar conversación nueva?')) {
+        await fetch('/reiniciar', {method: 'POST'});
+        chat.innerHTML = '<div class
