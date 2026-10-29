@@ -3,14 +3,13 @@
 # ==============================================
 
 from flask import Flask, render_template_string, request, jsonify
-import requests
+from groq import Groq
 
 app = Flask(__name__)
 
-# 🔑 Configuración - ¡Usa comillas normales!
-HF_API_URL = "https://api-inference.huggingface.com/models/gpt2"
-HF_API_TOKEN = "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"
-headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+# 🔑 Configuración de Groq
+GROQ_API_KEY = "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"
+client = Groq(api_key=GROQ_API_KEY)
 
 # 🧠 Historial de conversación
 historial = [
@@ -23,37 +22,16 @@ historial = [
 def consultar_ia(mensaje_nuevo):
     historial.append({"role": "user", "content": mensaje_nuevo})
     
-    # Construir el texto del mensaje
-    prompt = ""
-    for msg in historial:
-        if msg["role"] == "system":
-            prompt += msg["content"] + "\n\n"
-        elif msg["role"] == "user":
-            prompt += "Usuario: " + msg["content"] + "\n"
-        else:
-            prompt += "TAMPY: " + msg["content"] + "\n"
-    prompt += "TAMPY:"
-    
-    payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 100,
-            "temperature": 0.7,
-            "return_full_text": False
-        }
-    }
-    
     try:
-        respuesta = requests.post(HF_API_URL, headers=headers, json=payload, timeout=120)
-        respuesta.raise_for_status()
-        resultado = respuesta.json()
-        if isinstance(resultado, list) and len(resultado) > 0:
-            texto = resultado[0].get('generated_text', '').strip()
-            if "Usuario:" in texto:
-                texto = texto.split("Usuario:")[0].strip()
-            historial.append({"role": "assistant", "content": texto})
-            return texto
-        return "No recibí respuesta."
+        respuesta = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=historial,
+            temperature=0.7,
+            max_tokens=500
+        )
+        texto = respuesta.choices[0].message.content.strip()
+        historial.append({"role": "assistant", "content": texto})
+        return texto
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
 
