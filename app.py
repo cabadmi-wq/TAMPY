@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # 🔑 Configuración - ¡Usa comillas normales!
 HF_API_URL = "https://api-inference.huggingface.com/models/gpt2"
-HF_API_TOKEN = "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"
+HF_API_TOKEN = "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"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 # 🧠 Historial de conversación
