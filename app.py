@@ -24,7 +24,7 @@ def consultar_ia(mensaje_nuevo):
     
     try:
         respuesta = client.chat.completions.create(
-            model="mixtral-8x7b-instruct",
+            model="gemma2-9b-it",
             messages=historial,
             temperature=0.7,
             max_tokens=500
