@@ -24,7 +24,7 @@ def consultar_ia(mensaje_nuevo):
     
     try:
         respuesta = client.chat.completions.create(
-            model="llama3-groq-8b-8192-tool-use-preview",
+            model="llama-3.1-70b-versatile",
             messages=historial,
             temperature=0.7,
             max_tokens=500
